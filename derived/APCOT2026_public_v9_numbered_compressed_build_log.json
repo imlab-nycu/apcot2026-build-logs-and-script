@@ -1,0 +1,10 @@
+{
+  "source_pdf": "derived/APCOT2026_Abstract_Proceedings_public_v9_numbered.pdf",
+  "compressed_pdf": "derived/APCOT2026_Abstract_Proceedings_public_v9_numbered_compressed.pdf",
+  "source_bytes": 296446959,
+  "compressed_bytes": 112434770,
+  "source_sha256": "9246fb6589a49113c6883b65b96249ed4c8087e0ecdb8ce62ede6617bd51ae5a",
+  "compressed_sha256": "f522afd01ae063fd6d0ac75eec77933823a55213dcd5ea27541609ea823d9d11",
+  "compression_ratio": 0.3793,
+  "bytes_saved": 184012189
+}

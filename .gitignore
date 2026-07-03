@@ -1,0 +1,7 @@
+# Exclude large binaries
+*.pdf
+
+# Python cache
+__pycache__/
+*.pyc
+.venv_apcot/

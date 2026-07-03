@@ -1,0 +1,18 @@
+{
+  "html": "/home/tsai/YoshiNAS/Tasks/APCOT2026_Proceedings/apcot2026_abstract_index_v4.html",
+  "pdf_dir": "/home/tsai/YoshiNAS/Tasks/APCOT2026_Proceedings/APCOT_Abstract",
+  "front_matter_pdf": "/home/tsai/YoshiNAS/Tasks/APCOT2026_Proceedings/derived/APCOT2026_public_v6_preview_front_matter.pdf",
+  "manifest_csv": "/home/tsai/YoshiNAS/Tasks/APCOT2026_Proceedings/derived/APCOT2026_public_v6_preview_proceedings_manifest.csv",
+  "manifest_json": "/home/tsai/YoshiNAS/Tasks/APCOT2026_Proceedings/derived/APCOT2026_public_v6_preview_proceedings_manifest.json",
+  "excluded_csv": "/home/tsai/YoshiNAS/Tasks/APCOT2026_Proceedings/derived/APCOT2026_public_v6_preview_excluded_pdfs.csv",
+  "author_check_csv": "/home/tsai/YoshiNAS/Tasks/APCOT2026_Proceedings/derived/APCOT2026_public_v6_preview_author_check.csv",
+  "indexed_records": 307,
+  "included_abstract_pages": 612,
+  "front_matter_pages": 23,
+  "excluded_pdf_count": 136,
+  "duplicate_poster_entries_removed": 22,
+  "author_check_review_count": 118,
+  "public_mode": true,
+  "preview_only": true,
+  "generated_at": "2026-06-29T22:27:03"
+}
