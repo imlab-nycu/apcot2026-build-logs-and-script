@@ -6,6 +6,7 @@ import json
 import os
 import re
 import subprocess
+import unicodedata
 from collections import OrderedDict
 from io import BytesIO
 from dataclasses import dataclass
@@ -23,23 +24,55 @@ from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
 
+def parse_version_tag(value: str) -> tuple[int, str]:
+    match = re.fullmatch(r"v(\d+)([a-z]?)", value)
+    if not match:
+        return (-1, value)
+    return (int(match.group(1)), match.group(2))
+
+
+def detect_latest_html_index(root: Path) -> Path:
+    candidates = sorted(
+        root.glob("apcot2026_abstract_index_v*.html"),
+        key=lambda path: parse_version_tag(path.stem.rsplit("_", 1)[-1]),
+    )
+    if not candidates:
+        raise RuntimeError("Unable to locate any apcot2026_abstract_index_v*.html file")
+    return candidates[-1]
+
+
 ROOT = Path(__file__).resolve().parent
 DERIVED = ROOT / "derived"
-HTML_INDEX = ROOT / "apcot2026_abstract_index_v4.html"
-SOURCE_MANIFEST_V9 = DERIVED / "APCOT2026_public_v9_proceedings_manifest_authors_clean.csv"
-MANIFEST_CSV = DERIVED / "APCOT2026_public_v10_proceedings_manifest_authors_clean.csv"
-REORDER_LOG = DERIVED / "APCOT2026_public_v10_reorder_log.json"
-TOC_PDF = DERIVED / "APCOT2026_public_v10b_toc_pages.pdf"
-TOC_BUILD_LOG = DERIVED / "APCOT2026_public_v10b_toc_build_log.json"
-TOC_FRONT_MATTER = DERIVED / "APCOT2026_public_v10b_front_matter.pdf"
-TOC_FRONT_MATTER_LOG = DERIVED / "APCOT2026_public_v10b_front_matter_build_log.json"
-FRONT_MATTER_SOURCE = DERIVED / "APCOT2026_public_v10_front_matter.pdf"
-FINAL_PDF = DERIVED / "APCOT2026_Abstract_Proceedings_public_v10.pdf"
-FINAL_BUILD_LOG = DERIVED / "APCOT2026_public_v10_build_log.json"
-NUMBERED_PDF = DERIVED / "APCOT2026_Abstract_Proceedings_public_v10_numbered.pdf"
-NUMBERED_BUILD_LOG = DERIVED / "APCOT2026_public_v10_numbered_build_log.json"
-COMPRESSED_PDF = DERIVED / "APCOT2026_Abstract_Proceedings_public_v10_numbered_compressed.pdf"
-COMPRESSED_BUILD_LOG = DERIVED / "APCOT2026_public_v10_numbered_compressed_build_log.json"
+PROJECT = "APCOT2026"
+PUBLIC_LABEL = "public"
+VERSION = "v11"
+PREVIOUS_VERSION = "v10"
+
+
+def public_release_name(version: str, suffix: str) -> str:
+    return f"{PROJECT}_{PUBLIC_LABEL}_{version}_{suffix}"
+
+
+def proceedings_pdf_name(version: str, suffix: str = "") -> str:
+    base_name = f"{PROJECT}_Abstract_Proceedings_{PUBLIC_LABEL}_{version}"
+    return f"{base_name}_{suffix}" if suffix else base_name
+
+
+HTML_INDEX = detect_latest_html_index(ROOT)
+SOURCE_MANIFEST = DERIVED / f"{public_release_name(PREVIOUS_VERSION, 'proceedings_manifest_authors_clean')}.csv"
+MANIFEST_CSV = DERIVED / f"{public_release_name(VERSION, 'proceedings_manifest_authors_clean')}.csv"
+REORDER_LOG = DERIVED / f"{public_release_name(VERSION, 'reorder_log')}.json"
+TOC_PDF = DERIVED / f"{public_release_name(VERSION, 'toc_pages')}.pdf"
+TOC_BUILD_LOG = DERIVED / f"{public_release_name(VERSION, 'toc_build_log')}.json"
+TOC_FRONT_MATTER = DERIVED / f"{public_release_name(VERSION, 'front_matter')}.pdf"
+TOC_FRONT_MATTER_LOG = DERIVED / f"{public_release_name(VERSION, 'front_matter_build_log')}.json"
+FRONT_MATTER_SOURCE = DERIVED / f"{public_release_name(PREVIOUS_VERSION, 'front_matter')}.pdf"
+FINAL_PDF = DERIVED / f"{proceedings_pdf_name(VERSION)}.pdf"
+FINAL_BUILD_LOG = DERIVED / f"{public_release_name(VERSION, 'build_log')}.json"
+NUMBERED_PDF = DERIVED / f"{proceedings_pdf_name(VERSION, 'numbered')}.pdf"
+NUMBERED_BUILD_LOG = DERIVED / f"{public_release_name(VERSION, 'numbered_build_log')}.json"
+COMPRESSED_PDF = DERIVED / f"{proceedings_pdf_name(VERSION, 'numbered_compressed')}.pdf"
+COMPRESSED_BUILD_LOG = DERIVED / f"{public_release_name(VERSION, 'numbered_compressed_build_log')}.json"
 
 MANIFEST_FIELDS = [
     "id",
@@ -57,6 +90,19 @@ MANIFEST_FIELDS = [
     "start_page",
     "end_page",
 ]
+
+SUBSCRIPT_MARKUP = {
+    "₀": "<sub>0</sub>",
+    "₁": "<sub>1</sub>",
+    "₂": "<sub>2</sub>",
+    "₃": "<sub>3</sub>",
+    "₄": "<sub>4</sub>",
+    "₅": "<sub>5</sub>",
+    "₆": "<sub>6</sub>",
+    "₇": "<sub>7</sub>",
+    "₈": "<sub>8</sub>",
+    "₉": "<sub>9</sub>",
+}
 
 
 @dataclass(frozen=True)
@@ -220,6 +266,15 @@ def wrap(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+def normalize_toc_text(text: str) -> str:
+    normalized = unicodedata.normalize("NFC", text)
+    normalized = normalized.replace("、", ", ")
+    normalized = wrap(normalized)
+    for source, target in SUBSCRIPT_MARKUP.items():
+        normalized = normalized.replace(source, target)
+    return normalized
+
+
 def load_html_records(path: Path = HTML_INDEX) -> list[dict[str, str]]:
     html = path.read_text(encoding="utf-8")
     match = re.search(r"const records = (\[.*?\]);\s*const stats =", html, re.S)
@@ -282,7 +337,7 @@ def build_manifest_from_html(
         grouped_records.setdefault(key, []).append(record)
     ordered_records = [record for items in grouped_records.values() for record in items]
     source_root = infer_source_root(source_root)
-    cleanup_manifest = MANIFEST_CSV if MANIFEST_CSV.exists() else SOURCE_MANIFEST_V9
+    cleanup_manifest = MANIFEST_CSV if MANIFEST_CSV.exists() else SOURCE_MANIFEST
     author_cleanup: dict[str, str] = {}
     if cleanup_manifest.exists():
         for row in load_manifest_rows(cleanup_manifest):
@@ -326,7 +381,7 @@ def build_manifest_from_html(
     write_manifest_csv(resolved_rows, output_manifest)
 
     summary = {
-        "source_manifest": str(SOURCE_MANIFEST_V9.relative_to(ROOT)),
+        "source_manifest": str(SOURCE_MANIFEST.relative_to(ROOT)),
         "output_manifest": display_path(output_manifest),
         "rows": len(resolved_rows),
         "session_group_count": len(session_groups),
@@ -423,8 +478,8 @@ def build_toc_pdf(
             page_text = item["start_page"] if item["start_page"] == item["end_page"] else f"{item['start_page']}-{item['end_page']}"
             leader = "." * 130
             story.append(Paragraph(f"ID {wrap(item['id'])} {leader}<br/>{wrap(page_text)}", entry_line_style))
-            story.append(Paragraph(wrap(item["title"]), entry_title_style))
-            story.append(Paragraph(wrap(item["authors"]), entry_authors_style))
+            story.append(Paragraph(normalize_toc_text(item["title"]), entry_title_style))
+            story.append(Paragraph(normalize_toc_text(item["authors"]), entry_authors_style))
         if index < len(grouped) - 1:
             story.append(Spacer(1, 0.1 * mm))
 
