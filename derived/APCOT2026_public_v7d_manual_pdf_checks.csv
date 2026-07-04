@@ -1,0 +1,6 @@
+id,title,authors_v7c,authors_v7d,changed,note
+0123,Kirigami-inspired 4D Printing,"Taiki Sugihara, Michinao Hashimoto, Eiji Iwase","Taiki Sugihara, Michinao Hashimoto, Eiji Iwase",no,verified against source PDF; no change
+0171,Gold nanoparticles–modified graphene oxide for PH sensing,"Yu-Hsi Chang, Chun-Yu Li","Yu-Hsi Chang, Chun-Yu Li",no,verified against source PDF; no change
+0207,Next-Generation Wearable Organic Electrochemical Transistor-based Bioelectronic Medicine Enabled by Conducting Polymers and Laser-Scribed Graphene,Yu-Sheng Hsiao,Y.-S. Hsiao,yes,updated to source PDF author style
+0257,In-situ Interfacial Rheometry of Yield Stress Fluids via Soft MEMS Tactile Sensing: Bridging Tribology and Bulk Rheology,"Ryuga Sano, Akiyoshi Kusano, Takashi Abe, Akiomi Ushida, Masayuki Sohgawa","R. Sano, A. Kusano, T. Abe, A. Ushida, M. Sohgawa",yes,updated to source PDF author style
+0433,Microphysiological Muscle and Retinal Systems for Disease Modeling and Therapeutic Screening,Hon Fai Chan,Hon Fai Chan,no,source PDF header text shows no explicit author line; kept existing value
