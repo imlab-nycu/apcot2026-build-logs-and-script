@@ -8,8 +8,8 @@
   "final_pdf_pages": 624,
   "missing_pdf_count": 0,
   "page_mismatch_count": 0,
-  "final_pdf_sha256": "2ba2d6b1b8538ee5ed362ada25eef727c12f9d177fc226ba186a525c98341aad",
-  "final_pdf_bytes": 230518471,
+  "final_pdf_sha256": "8c0aee793d0abac406b178224669d8f11cdc768494847c8972e6e040d8bd2ba7",
+  "final_pdf_bytes": 230518467,
   "missing_pdfs": [],
   "page_mismatch_samples": []
 }

@@ -103,6 +103,7 @@ SUBSCRIPT_MARKUP = {
     "₇": "<sub>7</sub>",
     "₈": "<sub>8</sub>",
     "₉": "<sub>9</sub>",
+    "ₓ": "<sub>x</sub>",
 }
 
 
@@ -390,6 +391,7 @@ def build_manifest_from_html(
             '0346': [('Al2O3', 'Al₂O₃')],
             '0354': [('Ta2O5', 'Ta₂O₅')],
             '0328': [('Fe3O4', 'Fe₃O₄')],
+            '0358': [('SiO2', 'SiO₂')],
         }
         if r_id in subs:
             for old, new in subs[r_id]:
