@@ -1,0 +1,31 @@
+{
+  "source_manifest": "derived/APCOT2026_public_v10_proceedings_manifest_authors_clean.csv",
+  "output_manifest": "derived/APCOT2026_public_v13_proceedings_manifest_authors_clean.csv",
+  "rows": 307,
+  "session_group_count": 37,
+  "last_abstract_page": 612,
+  "first10_ids": [
+    "0105",
+    "0207",
+    "0323",
+    "0130",
+    "0131",
+    "0144",
+    "0145",
+    "0101",
+    "0265",
+    "0123"
+  ],
+  "last10_ids": [
+    "0331",
+    "0334",
+    "0333",
+    "0342",
+    "0352",
+    "0397",
+    "0381",
+    "0410",
+    "0392",
+    "0383"
+  ]
+}

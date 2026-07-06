@@ -19,9 +19,10 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.pdfbase.pdfmetrics import registerFont
+from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen.canvas import Canvas
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
 def parse_version_tag(value: str) -> tuple[int, str]:
@@ -45,7 +46,7 @@ ROOT = Path(__file__).resolve().parent
 DERIVED = ROOT / "derived"
 PROJECT = "APCOT2026"
 PUBLIC_LABEL = "public"
-VERSION = "v11"
+VERSION = "v13"
 PREVIOUS_VERSION = "v10"
 
 
@@ -435,8 +436,8 @@ def build_toc_pdf(
         "EntryLine",
         parent=styles["BodyText"],
         fontName="APCOTNotoSans-Bold",
-        fontSize=6.8,
-        leading=7.5,
+        fontSize=7.6,
+        leading=8.3,
         leftIndent=0,
         firstLineIndent=0,
         spaceBefore=0,
@@ -446,9 +447,9 @@ def build_toc_pdf(
         "EntryTitle",
         parent=styles["BodyText"],
         fontName="APCOTNotoSans",
-        fontSize=7.0,
-        leading=7.8,
-        leftIndent=3,
+        fontSize=7.8,
+        leading=8.7,
+        leftIndent=4,
         firstLineIndent=0,
         spaceBefore=0,
         spaceAfter=0,
@@ -457,14 +458,45 @@ def build_toc_pdf(
         "EntryAuthors",
         parent=styles["BodyText"],
         fontName="APCOTNotoSans",
-        fontSize=6.5,
-        leading=7.1,
+        fontSize=7.2,
+        leading=7.9,
         textColor="#111111",
-        leftIndent=6,
+        leftIndent=8,
         firstLineIndent=0,
         spaceBefore=0,
         spaceAfter=0,
     )
+
+    page_width = A4[0]
+    usable_width = page_width - (doc_left := 10 * mm) - (doc_right := 10 * mm)
+
+    def build_entry_row(item_id: str, page_text: str) -> Table:
+        prefix = f"ID {wrap(item_id)} "
+        font_name = entry_line_style.fontName
+        font_size = entry_line_style.fontSize
+        dots_width = pdfmetrics.stringWidth(".", font_name, font_size)
+        prefix_width = pdfmetrics.stringWidth(f"ID {item_id} ", font_name, font_size)
+        page_col_width = 16 * mm
+        available = max(0.0, usable_width - page_col_width - prefix_width - 2.0)
+        dots_count = max(24, int(available / max(dots_width, 0.1)))
+        left_text = f"{prefix}{'.' * dots_count}"
+        row = Table(
+            [[Paragraph(left_text, entry_line_style), Paragraph(wrap(page_text), entry_line_style)]],
+            colWidths=[usable_width - page_col_width, page_col_width],
+        )
+        row.setStyle(
+            TableStyle(
+                [
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+                ]
+            )
+        )
+        return row
 
     story = [Paragraph("Table of Contents", title_style), Spacer(1, 0.15 * mm)]
     grouped: OrderedDict[tuple[str, str], list[dict[str, str]]] = OrderedDict()
@@ -476,8 +508,7 @@ def build_toc_pdf(
         story.append(Paragraph(f"{wrap(day)} / {wrap(session_label)}", heading_style))
         for item in items:
             page_text = item["start_page"] if item["start_page"] == item["end_page"] else f"{item['start_page']}-{item['end_page']}"
-            leader = "." * 130
-            story.append(Paragraph(f"ID {wrap(item['id'])} {leader}<br/>{wrap(page_text)}", entry_line_style))
+            story.append(build_entry_row(item["id"], page_text))
             story.append(Paragraph(normalize_toc_text(item["title"]), entry_title_style))
             story.append(Paragraph(normalize_toc_text(item["authors"]), entry_authors_style))
         if index < len(grouped) - 1:
@@ -486,8 +517,8 @@ def build_toc_pdf(
     doc = SimpleDocTemplate(
         str(output_pdf),
         pagesize=A4,
-        leftMargin=10 * mm,
-        rightMargin=10 * mm,
+        leftMargin=doc_left,
+        rightMargin=doc_right,
         topMargin=10 * mm,
         bottomMargin=9 * mm,
     )
@@ -523,12 +554,38 @@ def build_front_matter_pdf(
     output_pdf: Path = TOC_FRONT_MATTER,
     build_log: Path = TOC_FRONT_MATTER_LOG,
 ) -> dict[str, str | int]:
-    merge_pdfs([cover_source, toc_source], output_pdf)
+    cover_reader = PdfReader(str(cover_source))
+    toc_start_index: int | None = None
+    for index, page in enumerate(cover_reader.pages):
+        text = page.extract_text() or ""
+        if "Table of Contents" in text:
+            toc_start_index = index
+            break
+
+    if toc_start_index is None:
+        cover_pages_to_keep = len(cover_reader.pages)
+    else:
+        cover_pages_to_keep = max(1, toc_start_index)
+
+    toc_reader = PdfReader(str(toc_source))
+    writer = PdfWriter()
+    for page in cover_reader.pages[:cover_pages_to_keep]:
+        writer.add_page(page)
+    for page in toc_reader.pages:
+        writer.add_page(page)
+
+    ensure_parent(output_pdf)
+    with output_pdf.open("wb") as handle:
+        writer.write(handle)
+
     summary = {
         "output_pdf": display_path(output_pdf),
         "pages": len(PdfReader(str(output_pdf)).pages),
         "cover_source": display_path(cover_source),
         "toc_source": display_path(toc_source),
+        "cover_pages_total": len(cover_reader.pages),
+        "cover_pages_used": cover_pages_to_keep,
+        "legacy_toc_stripped": toc_start_index is not None,
     }
     write_json(build_log, summary)
     return summary
@@ -590,23 +647,48 @@ def _render_footer_overlay(width: float, height: float, text: str) -> PdfReader:
     return PdfReader(buffer)
 
 
+def _render_page_overlay(width: float, height: float, footer_text: str, abstract_id: str | None = None) -> PdfReader:
+    buffer = BytesIO()
+    canvas = Canvas(buffer, pagesize=(width, height))
+    canvas.setFont("APCOTNotoSans", 8.6)
+    if abstract_id:
+        canvas.drawString(18 * mm, height - 12 * mm, abstract_id)
+    canvas.drawCentredString(width / 2, 9 * mm, footer_text)
+    canvas.save()
+    buffer.seek(0)
+    return PdfReader(buffer)
+
+
 def build_numbered_proceedings_pdf(
     source_pdf: Path = FINAL_PDF,
     output_pdf: Path = NUMBERED_PDF,
     build_log: Path = NUMBERED_BUILD_LOG,
-    front_matter_pages: int = 23,
+    front_matter_pdf: Path = TOC_FRONT_MATTER,
+    front_matter_pages: int | None = None,
     footer_text_format: str = "APCOT 2026 Proceedings   [page]",
 ) -> dict[str, str | int]:
     reader = PdfReader(str(source_pdf))
     writer = PdfWriter()
     regular_font = find_font("Noto Sans")
     registerFont(TTFont("APCOTNotoSans", str(regular_font)))
+    if front_matter_pages is None:
+        front_matter_pages = len(PdfReader(str(front_matter_pdf)).pages)
+
+    rows = load_manifest_rows(MANIFEST_CSV)
+    abstract_ids_by_page: dict[int, str] = {}
+    for row in rows:
+        abstract_id = row["code"] or row["id"]
+        start_page = int(row["start_page"])
+        end_page = int(row["end_page"])
+        for page_number in range(start_page, end_page + 1):
+            abstract_ids_by_page[page_number] = abstract_id
 
     for index, page in enumerate(reader.pages):
         if index >= front_matter_pages:
             logical_page = index - front_matter_pages + 1
             footer_text = footer_text_format.replace("[page]", str(logical_page))
-            overlay_reader = _render_footer_overlay(float(page.mediabox.width), float(page.mediabox.height), footer_text)
+            abstract_id = abstract_ids_by_page.get(logical_page)
+            overlay_reader = _render_page_overlay(float(page.mediabox.width), float(page.mediabox.height), footer_text, abstract_id)
             page.merge_page(overlay_reader.pages[0])
         writer.add_page(page)
 
@@ -617,6 +699,7 @@ def build_numbered_proceedings_pdf(
     summary = {
         "source_pdf": display_path(source_pdf),
         "output_pdf": display_path(output_pdf),
+        "front_matter_pdf": display_path(front_matter_pdf),
         "front_matter_pages": front_matter_pages,
         "numbered_abstract_pages": len(reader.pages) - front_matter_pages,
         "first_numbered_pdf_page": front_matter_pages + 1,

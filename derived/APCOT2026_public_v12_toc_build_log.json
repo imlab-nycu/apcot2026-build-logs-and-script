@@ -1,0 +1,5 @@
+{
+  "manifest_csv": "derived/APCOT2026_public_v12_proceedings_manifest_authors_clean.csv",
+  "output_pdf": "derived/APCOT2026_public_v12_toc_pages.pdf",
+  "record_count": 307
+}

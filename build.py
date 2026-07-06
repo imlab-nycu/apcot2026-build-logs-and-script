@@ -28,6 +28,7 @@ import proceedings_build as pb  # noqa: E402
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--force", action="store_true", help="Rebuild the selected stage(s) regardless of timestamps.")
+    common.add_argument("--version", default=pb.VERSION, help="Pipeline version tag for validation purposes.")
     parser = argparse.ArgumentParser(
         prog="build.py",
         description="Rebuild the APCOT 2026 proceedings pipeline.",
@@ -62,6 +63,9 @@ def print_summary(results: list[tuple[str, dict[str, object]]]) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    if args.version != pb.VERSION:
+        raise SystemExit(f"Unsupported version: {args.version}. This build script is pinned to {pb.VERSION}.")
 
     if args.command == "stages":
         print_stage_list()
