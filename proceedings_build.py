@@ -46,8 +46,8 @@ ROOT = Path(__file__).resolve().parent
 DERIVED = ROOT / "derived"
 PROJECT = "APCOT2026"
 PUBLIC_LABEL = "public"
-VERSION = "v14"
-PREVIOUS_VERSION = "v13"
+VERSION = "v15"
+PREVIOUS_VERSION = "v14"
 
 
 def public_release_name(version: str, suffix: str) -> str:

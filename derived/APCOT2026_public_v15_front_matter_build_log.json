@@ -1,0 +1,9 @@
+{
+  "output_pdf": "derived/APCOT2026_public_v15_front_matter.pdf",
+  "pages": 12,
+  "cover_source": "derived/APCOT2026_public_v14_front_matter.pdf",
+  "toc_source": "derived/APCOT2026_public_v15_toc_pages.pdf",
+  "cover_pages_total": 12,
+  "cover_pages_used": 1,
+  "legacy_toc_stripped": true
+}

@@ -1,0 +1,15 @@
+{
+  "front_matter_pdf": "derived/APCOT2026_public_v15_front_matter.pdf",
+  "manifest_csv": "derived/APCOT2026_public_v15_proceedings_manifest_authors_clean.csv",
+  "final_pdf": "derived/APCOT2026_Abstract_Proceedings_public_v15.pdf",
+  "indexed_records": 307,
+  "front_matter_pages": 12,
+  "included_abstract_pages": 612,
+  "final_pdf_pages": 624,
+  "missing_pdf_count": 0,
+  "page_mismatch_count": 0,
+  "final_pdf_sha256": "8c0aee793d0abac406b178224669d8f11cdc768494847c8972e6e040d8bd2ba7",
+  "final_pdf_bytes": 230518467,
+  "missing_pdfs": [],
+  "page_mismatch_samples": []
+}
