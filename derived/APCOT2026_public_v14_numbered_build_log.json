@@ -1,0 +1,14 @@
+{
+  "source_pdf": "derived/APCOT2026_Abstract_Proceedings_public_v14.pdf",
+  "output_pdf": "derived/APCOT2026_Abstract_Proceedings_public_v14_numbered.pdf",
+  "front_matter_pdf": "derived/APCOT2026_public_v14_front_matter.pdf",
+  "front_matter_pages": 12,
+  "numbered_abstract_pages": 612,
+  "first_numbered_pdf_page": 13,
+  "first_logical_page_number": 1,
+  "last_logical_page_number": 612,
+  "footer_text_format": "APCOT 2026 Proceedings   [page]",
+  "output_pdf_pages": 624,
+  "output_pdf_bytes": 304002012,
+  "output_pdf_sha256": "3a652e09cf1af00b78ec6c4149c14ce01e0bf7acf7c6517edda45eff23624661"
+}

@@ -46,8 +46,8 @@ ROOT = Path(__file__).resolve().parent
 DERIVED = ROOT / "derived"
 PROJECT = "APCOT2026"
 PUBLIC_LABEL = "public"
-VERSION = "v13"
-PREVIOUS_VERSION = "v10"
+VERSION = "v14"
+PREVIOUS_VERSION = "v13"
 
 
 def public_release_name(version: str, suffix: str) -> str:
@@ -360,6 +360,48 @@ def build_manifest_from_html(
         end_page = cursor + source_pages - 1
         cursor = end_page + 1
         session_groups.setdefault((record["day"], record["session_label"]), []).append(record["id"])
+        
+        row_title = record.get("title", "")
+        row_authors = author_cleanup.get(record["id"], record.get("authors", ""))
+        
+        # --- APPLIED FIXES (v14) ---
+        r_id = record["id"]
+        if r_id == '0236':
+            row_title = "Control of Strain Response in Modal-Interference-Based Plastic Optical Fiber Sensors via Double-Side Reactive Ion Etching"
+            row_authors = "Motoki Kochi, Koyo Shibuta, Keito Ishida, Yuri Wada, Taiki Kumagai, Keita S. Shirai, C.-Y. Lo, H. Lee, Y. Mizuno, D. Yamane"
+        elif r_id == '0201':
+            row_title = "Enhanced Suppression of Non-Specific Adsorption of Graphene Oxide-Based Resonant Sensor for Label-Free Virus Sensing"
+            row_authors = "Viet Khoa Pham, Laoyang Yiayee, Homare Yoshida, Sachiko Sakai, Ippei Akita, Yasuyuki Imaizumi, Tatsuro Goda, I.-H. Kwon, Y.-J. Choi, T. Noda, K. Sawada, K. Takahashi"
+        elif r_id == '0235':
+            row_title = "Tri-Layer Soft-Rigid Stretchable Substrates for Direct Fabrication Stretchable Electronics Device"
+            row_authors = "Shusuke Yamakoshi, Fumika Nakamura, Sho Sato, Yuji Isano, Yutaka Isoda, Ryosuke Matsuda, Naoko Namba, Tsuyoshi Sekitani, Takafumi Uemura, Hiroki Ota"
+        elif r_id == '0426':
+            row_title = "Multifunctional Nanostructured Biosensor Platform Integrating Electrical, Optical Transduction Mechanisms"
+            row_authors = "Hung-Hsiang Wang, Yu-Quan Chen, Chih-Ting Lin"
+            
+        subs = {
+            '0218': [('Ti3C2Tx', 'Ti₃C₂Tₓ')],
+            '0188': [('BaTiO3', 'BaTiO₃')],
+            '0278': [('MoS2', 'MoS₂')],
+            '0192': [('0.4Pb(Mg1/3Nb2/3)O3–0.22PbZrO3-0.38PbTiO3', '0.4Pb(Mg₁/₃Nb₂/₃)O₃–0.22PbZrO₃-0.38PbTiO₃')],
+            '0320': [('WS2/Ga2O3', 'WS₂/Ga₂O₃')],
+            '0341': [('Al2O3', 'Al₂O₃'), ('SnO2', 'SnO₂')],
+            '0303': [('TiO2', 'TiO₂')],
+            '0346': [('Al2O3', 'Al₂O₃')],
+            '0354': [('Ta2O5', 'Ta₂O₅')],
+            '0328': [('Fe3O4', 'Fe₃O₄')],
+        }
+        if r_id in subs:
+            for old, new in subs[r_id]:
+                row_title = row_title.replace(old, new)
+                
+        if r_id == '0447': row_authors = "Fuyang Qu, Luoquan Li, Juan Li, Guangyao Cheng, Yi-Ping Ho"
+        elif r_id == '0430': row_authors = "Guangyao Cheng, Luoquan Li, Weilun Liu, Silin Zhong, Yi-Ping Ho"
+        elif r_id == '0454': row_authors = "Yi-Hsien Wu, Ching-Kai Lin, Chen-Wei Chang, Chin-Chung Chen, Shu-Chung Lee, Yun-Chien Cheng, Tien-Kan Chung"
+        elif r_id == '0253': row_authors = "Qinru Xiao, Guangyao Cheng, Kuan Wen Lou, Yi-Ping Ho"
+        elif r_id == '0416': row_authors = "Yi-Jing Liao, Shu-Ping Lin"
+        # ---------------------------
+
         resolved_rows.append(
             {
                 "id": record["id"],
@@ -369,8 +411,8 @@ def build_manifest_from_html(
                 "session_time": record.get("session_time", ""),
                 "time": record.get("time", ""),
                 "room": record.get("room", ""),
-                "title": record.get("title", ""),
-                "authors": author_cleanup.get(record["id"], record.get("authors", "")),
+                "title": row_title,
+                "authors": row_authors,
                 "affiliations": record.get("affiliations", ""),
                 "source_pdf": str(source_pdf),
                 "source_pages": str(source_pages),
@@ -378,6 +420,22 @@ def build_manifest_from_html(
                 "end_page": str(end_page),
             }
         )
+
+    # Reorder rows to fix A/B/C/D/E sequence issues
+    def day_to_int(d_str):
+        if "Monday" in d_str: return 1
+        if "Tuesday" in d_str: return 2
+        if "Wednesday" in d_str: return 3
+        return 4
+    resolved_rows.sort(key=lambda r: (day_to_int(r["day"]), r["session_time"], r["session_label"], r["time"]))
+    
+    # Recalculate pages since reordering changes the page numbers
+    cursor = 1
+    for r in resolved_rows:
+        p_count = int(r["source_pages"])
+        r["start_page"] = str(cursor)
+        r["end_page"] = str(cursor + p_count - 1) if p_count > 0 else str(cursor)
+        cursor += p_count
 
     write_manifest_csv(resolved_rows, output_manifest)
 
